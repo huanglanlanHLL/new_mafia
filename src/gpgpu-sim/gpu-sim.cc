@@ -240,7 +240,7 @@ void memory_config::reg_options(class OptionParser * opp)
 //sjq start                            
     option_parser_register(opp,"-partition_active_cycle",
                                 OPT_INT64,&m_L2_config.m_partition_config.activeCycles,
-                                "the l2 cycles that partition unit to refresh the partition information","5000000");
+                                "the l2 cycles that partition unit to refresh the partition information","50000");
 
     option_parser_register(opp,"-partition_samplingwidth",
                                 OPT_INT32,&m_L2_config.m_partition_config.samplingWidth,
@@ -250,7 +250,7 @@ void memory_config::reg_options(class OptionParser * opp)
                                 "the appnum","2"); 
     option_parser_register(opp,"-partition_enable",
                                 OPT_BOOL,&m_L2_config.m_partition_config.enable_partition_unit,
-                                "enable l2 partition with partition unit?","1");                   
+                                "enable l2 partition with partition unit?","0");                   
      option_parser_register(opp,"-partition_enable",
                                 OPT_INT32,&m_L2_config.m_partition_config.reSetPolicy,
                                 "reset polocy:0: devide by2 1:set zero","0");    
