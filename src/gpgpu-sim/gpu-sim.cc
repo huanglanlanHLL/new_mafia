@@ -251,7 +251,7 @@ void memory_config::reg_options(class OptionParser * opp)
     option_parser_register(opp,"-partition_enable",
                                 OPT_BOOL,&m_L2_config.m_partition_config.enable_partition_unit,
                                 "enable l2 partition with partition unit?","0");                   
-     option_parser_register(opp,"-partition_enable",
+     option_parser_register(opp,"-partition_resetpolicy",
                                 OPT_INT32,&m_L2_config.m_partition_config.reSetPolicy,
                                 "reset polocy:0: devide by2 1:set zero","0");    
 //sjq end
