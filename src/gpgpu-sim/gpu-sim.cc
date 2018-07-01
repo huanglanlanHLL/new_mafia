@@ -1519,9 +1519,9 @@ void gpgpu_sim::cycle()
    if (clock_mask & L2) {
        static unsigned long long part_cycle=0;
        if(part_cycle%m_config.m_memory_config.m_L2_config.m_partition_config.activeCycles==0){
-           p_m_partition_unit->setBestPartition();
-           p_m_partition_unit->reSet();
-           p_m_partition_unit->printStat();
+           p_m_partition_unit->setBestPartition();//set best partition_policy ,which won't be reset then!
+           p_m_partition_unit->save();//save to file
+           p_m_partition_unit->reSet();//reset static
        }
        part_cycle++;
        m_power_stats->pwr_mem_stat->l2_cache_stats[CURRENT_STAT_IDX].clear();

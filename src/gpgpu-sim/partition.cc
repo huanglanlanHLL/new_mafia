@@ -1,7 +1,7 @@
 #include"partition.hpp"
 #include<cassert>
 #include<fstream>
-
+#include<iostream>
 #ifdef SJQ_DEBUG
 #include<iostream>
 template<typename T> std::ostream& operator<<(std::ostream& out,std::list<T> m_list){
@@ -24,11 +24,11 @@ partition_unit::partition_unit(const partition_config& config):
                     V(ULL)(config.app_num,0)),
     best_partition(m_config.app_num,m_config.n_assoc/2),
     
-    l2_sim_stack_array(num_stack,V(L(ULL))(m_config.app_num,L(ULL)(16,-1))),
+    l2_sim_stack_array(num_stack,V(L(ULL))(m_config.app_num,L(ULL)(m_config.n_assoc,-1))),
     counter(m_config.app_num,\
             V(ULL)(m_config.n_assoc,0)),
     local_counter(num_stack,\
-                V(V(ULL))(m_config.app_num,V(ULL)(16,0))),
+                V(V(ULL))(m_config.app_num,V(ULL)(m_config.n_assoc,0))),
     compete_stack(num_stack,L(ULL)(m_config.n_assoc,-1)),
     compete_hit_conter(num_stack,V(ULL)(m_config.app_num,0))
       
@@ -38,6 +38,13 @@ partition_unit::partition_unit(const partition_config& config):
         abort();
         return;
     }
+    //to clear the file Miss_stat.txt
+    std::ofstream out("miss_stat.txt");
+    if(!out.is_open()){
+        abort();
+    }
+    out<<std::endl;
+    out.close();
 }
 partition_config::partition_config(){}
 
@@ -154,7 +161,15 @@ void partition_unit::setBestPartition() {
 const std::vector<int>& partition_unit::getBestPartition() const{
     return best_partition;
 }
+void partition_unit::save(){
+    partition_stat.push_back(get_best_local());
+    print_miss_stat();
+    printStat();
+}
 void partition_unit::reSet(){
+    //save the best local 
+
+
     switch(m_config.reSetPolicy){
         case 0:
         for(int i=0;i<m_config.app_num;i++){
@@ -162,7 +177,7 @@ void partition_unit::reSet(){
                 counter[i][j]/=2;
             }
         }
-        for(int i=0;i<m_config.n_set/m_config.samplingWidth;i++){
+        for(int i=0;i<num_stack;i++){
         
             for(int j=0;j<m_config.app_num;j++){
             
@@ -178,7 +193,7 @@ void partition_unit::reSet(){
                 counter[i][j]=0;
             }
         }
-        for(int i=0;i<m_config.n_set/m_config.samplingWidth;i++){    
+        for(int i=0;i<num_stack;i++){    
             for(int j=0;j<m_config.app_num;j++){
                 for(int k=0;k<m_config.n_assoc;k++){
                     local_counter[i][j][k]=0;
@@ -188,8 +203,14 @@ void partition_unit::reSet(){
         break;
         
     }
-    partition_stat.push_back(get_best_local());
-    print_miss_stat();
+    
+    //reset the miss stat
+    for(int i=0;i<num_stack;i++){    
+        for(int j=0;j<m_config.app_num;j++){
+            sampleing_access[i][j]=0;
+            compete_hit_conter[i][j]=0;
+        }
+    }
 
     
 }
@@ -234,6 +255,7 @@ void partition_unit::print_miss_stat(){
         abort();
     }
     out<<m_cycle*m_config.activeCycles<<" ";
+    m_cycle++;
     for(int i=0;i<num_stack;i++){
         for(int j=0;j<m_config.app_num;j++){
             out<<sampleing_access[i][j]<<" "\
@@ -243,4 +265,37 @@ void partition_unit::print_miss_stat(){
     }
     out<<std::endl;
     out.close();
+
+}
+void partition_unit::res_fail(unsigned core_id,unsigned set_idx){//called when the access will cause a reservation fail
+    unsigned appId=core_id/15;//TODO
+    unsigned stackId=set_idx/m_config.samplingWidth;
+    appAccess[appId]++;
+    sampleing_access[stackId][appId]++;
+}
+void partition_config::init(int assoc,int set,int mem_partiton,int sub_partition_per_mem){
+    n_assoc=assoc;
+    n_set=set*mem_partiton*sub_partition_per_mem;
+        
+}
+void partition_unit::print_stack_compete(unsigned set_idx)//only for debug
+{
+    unsigned val;
+  
+    if(set_idx%m_config.samplingWidth==0){
+        std::cout<<"compete stack:"<<std::endl;
+        std::cout<<"setId="<<set_idx<<std::endl;
+        L(ULL)::iterator it=this->compete_stack[set_idx/m_config.samplingWidth].begin();
+        while(it!=compete_stack[set_idx/m_config.samplingWidth].end())
+        {
+            if(*it==-1){
+                std::cout<<"NULL"<<"  ---->>>>  ";
+                
+            }else{
+                std::cout<<*it<<"  ---->>>>  ";  
+            }
+            it++;
+        }
+        std::cout<<std::endl;
+    }
 }

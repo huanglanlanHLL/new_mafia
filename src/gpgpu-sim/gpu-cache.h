@@ -327,6 +327,7 @@ private:
 class tag_array {
 public:
     // Use this constructor
+    void print_set(new_addr_type addr);
     tag_array(cache_config &config, int core_id, int type_id );
     ~tag_array();
 
@@ -583,7 +584,7 @@ bool was_read_sent( const std::list<cache_event> &events );
 class baseline_cache : public cache_t {
 public:
     //sjq
-    
+    void print_set(new_addr_type addr);
     baseline_cache( const char *name, cache_config &config, int core_id, int type_id, mem_fetch_interface *memport,
                      enum mem_fetch_status status )
     : m_config(config), m_tag_array(new tag_array(config,core_id,type_id)), 

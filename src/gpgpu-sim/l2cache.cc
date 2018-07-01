@@ -394,17 +394,32 @@ void memory_sub_partition::cache_cycle( unsigned cycle )
             bool port_free = m_L2cache->data_port_free(); 
             if ( !output_full && port_free ) {
                 std::list<cache_event> events;
+               
+                enum cache_request_status status = m_L2cache->access(mf->get_addr(),mf,gpu_sim_cycle+gpu_tot_sim_cycle,events);
 
-//sjq
+                //sjq
                 partition_unit* part= m_config->m_L2_config.p_part_unit;
                 new_addr_type part_addr=mf->get_addr();
-               
-                unsigned setId=((part_addr >> LOGB2(m_config->m_L2_config.get_line_sz())) & (m_config->m_L2_config.get_nset()-1));
-                new_addr_type part_tag=m_config->m_L2_config.tag(part_addr);
-                part->access(mf->get_sid(),setId,part_tag);
+                unsigned n_set=m_config->m_L2_config.get_nset()*m_config->m_n_mem_sub_partition;
+                
+                unsigned setId=(part_addr >> LOGB2(m_config->m_L2_config.get_line_sz())) %( n_set);
+                if(status!=RESERVATION_FAIL){
+                    
+                    
+                    new_addr_type part_tag=m_config->m_L2_config.tag(part_addr);
+                    part->access(mf->get_sid(),setId,part_tag);
+                    
+                    
+                    //if(setId%8==0)*******************test pass!!!
+                    //    part->print_stack_compete(setId);
+                    //    m_L2cache->print_set(part_addr);
+                }else{
+                    part->res_fail(mf->get_sid(),setId);
+                }
+                
 
+                //sjq end
 
-                enum cache_request_status status = m_L2cache->access(mf->get_addr(),mf,gpu_sim_cycle+gpu_tot_sim_cycle,events);
                 bool write_sent = was_write_sent(events);
                 bool read_sent = was_read_sent(events);
 

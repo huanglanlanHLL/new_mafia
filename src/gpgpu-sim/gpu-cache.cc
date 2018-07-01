@@ -27,6 +27,7 @@
 #include<iostream>
 using std::cout;
 using std::endl;
+#include<algorithm>
 #include "gpu-cache.h"
 #include "stat-tool.h"
 #include <assert.h>
@@ -1263,7 +1264,7 @@ data_cache::rd_miss_base( new_addr_type addr,
             mem_fetch *wb = m_memfetch_creator->alloc(evicted.m_block_addr,
                 m_wrbk_type,m_config.get_line_sz(),true);
         send_write_request(wb, WRITE_BACK_REQUEST_SENT, time, events);
-    }
+        }
         return MISS;
     }
     return RESERVATION_FAIL;
@@ -1521,6 +1522,40 @@ void tex_cache::display_state( FILE *fp ) const
         fprintf(fp,"%s:          ", f.m_miss?"miss":"hit ");
         f.m_request->print(fp,false);
     }
+}
+
+
+void baseline_cache::print_set(new_addr_type addr)
+{
+    m_tag_array->print_set(addr);
+}
+bool compare(const cache_block_t a1,const cache_block_t a2){
+    if(a1.m_last_access_time>a2.m_last_access_time){
+        return true;
+    }else{
+        return false;
+    }
+}
+void tag_array::print_set(new_addr_type addr){
+    unsigned set_index = m_config.set_index(addr);
+    
+    new_addr_type tag = m_config.tag(addr);
+    unsigned index = set_index*m_config.m_assoc;
+    std::vector<cache_block_t> m_array;
+    for(int i=0;i<m_config.m_assoc;i++){
+        m_array.push_back(m_lines[index]);
+        index++;
+
+    }
+    index = set_index*m_config.m_assoc;
+    std::sort(m_array.begin(),m_array.end(),compare);
+    std::cout<<"from tag_array"<<std::endl;
+    std::cout<<"setIdx="<<set_index<<std::endl;
+    for(int i=0;i<m_config.m_assoc;i++){
+        std::cout<<m_lines[index].m_tag<<" ---->>> ";
+        index++;
+    }
+    std::cout<<std::endl;
 }
 /******************************************************************************************************************************************/
 

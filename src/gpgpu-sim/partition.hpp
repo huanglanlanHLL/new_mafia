@@ -24,11 +24,7 @@ typedef unsigned long long cycle_size;
 struct partition_config
 {
     partition_config();
-    void init(int assoc,int set){
-        n_assoc=assoc;
-        n_set=set;
-        
-    }
+    void init(int assoc,int set,int mem_partiton=6,int sub_partition_per_mem=2);
     //void reg_options( OptionParser * opp);
 
     //members
@@ -47,9 +43,11 @@ class partition_unit{
     public: 
     partition_unit(const partition_config&);
     void access(unsigned core_id,unsigned set_idx,new_addr_type tagId);
+    void res_fail(unsigned core_id,unsigned set_idx);
     const std::vector<int>& getBestPartition() const;
     void setBestPartition();
     void reSet();
+    void save();
     void printStat();
     std::vector<int> currPartition;
     const partition_config& get_config() const{
@@ -57,6 +55,11 @@ class partition_unit{
     }
     std::vector<unsigned> get_best_local();
     void print_miss_stat();
+    void print_stack_compete(unsigned setIdx);
+
+
+
+
     private:
     //unsigned long long total_access;
     const partition_config& m_config;
