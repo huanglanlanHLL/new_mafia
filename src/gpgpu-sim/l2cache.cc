@@ -414,7 +414,9 @@ void memory_sub_partition::cache_cycle( unsigned cycle )
                     //    part->print_stack_compete(setId);
                     //    m_L2cache->print_set(part_addr);
                 }else{
-                    part->res_fail(mf->get_sid(),setId);
+                    //if reservation fail happened,do nothing
+                    //part->res_fail(mf->get_sid(),setId);
+
                 }
                 
 
