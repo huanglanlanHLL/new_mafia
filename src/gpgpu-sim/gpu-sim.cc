@@ -26,7 +26,8 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
+#include <iostream>
+#include <fstream>
 #include "gpu-sim.h"
 
 #include <stdio.h>
@@ -81,8 +82,17 @@ extern FILE *file1;
 extern FILE *file2;
 extern FILE *file3;
 bool g_interactive_debugger_enabled=false;
-
-
+//sjq
+unsigned long long total_enter_icnt_to_l2_times=0;
+unsigned long long total_enter_l2_to_icnt_times=0;
+unsigned long long total_enter_l2_to_dram_times=0;
+unsigned long long total_enter_dram_to_l2_times=0; 
+unsigned long long total_enter_icnt_to_l2_cycles=0;
+unsigned long long total_enter_l2_to_icnt_cycles=0;
+unsigned long long total_enter_l2_to_dram_cycles=0;
+unsigned long long total_enter_dram_to_l2_cycles=0;
+unsigned long long next_record_cycle=0;
+//sjq
 unsigned long long  gpu_sim_cycle = 0;
 int count_tlp =0;
 unsigned long long  gpu_tot_sim_cycle = 0;
@@ -812,6 +822,22 @@ void gpgpu_sim::update_stats() {
 
 void gpgpu_sim::print_stats()
 {
+    std::ofstream out("queue_latency.txt");
+    if (!out.is_open())
+    {
+        abort();
+    }
+    out << total_enter_icnt_to_l2_times << " "
+        << total_enter_l2_to_icnt_times << " "
+        << total_enter_l2_to_dram_times << " "
+        << total_enter_dram_to_l2_times << " "
+        << total_enter_icnt_to_l2_cycles << " "
+        << total_enter_l2_to_icnt_cycles << " "
+        << total_enter_l2_to_dram_cycles << " "
+        << total_enter_dram_to_l2_cycles << " " << std::endl;
+    out.close();
+
+    //sjq
     ptx_file_line_stats_write_file();
     gpu_print_stat();
 
@@ -1033,11 +1059,25 @@ void gpgpu_sim::clear_executed_kernel_info()
 }
 
 void gpgpu_sim::gpu_print_stat_file(FILE* outputfile) 
-{  
-   //FILE *statfout = stdout; 
+{
+    std::ofstream out("queue_latency.txt");
+    if (!out.is_open())
+    {
+        abort();
+    }
+    out << total_enter_icnt_to_l2_times << " "
+        << total_enter_l2_to_icnt_times << " "
+        << total_enter_l2_to_dram_times << " "
+        << total_enter_dram_to_l2_times << " "
+        << total_enter_icnt_to_l2_cycles << " "
+        << total_enter_l2_to_icnt_cycles << " "
+        << total_enter_l2_to_dram_cycles << " "
+        << total_enter_dram_to_l2_cycles << " " << std::endl;
+    out.close();
+    //FILE *statfout = stdout;
 
-   //std::string kernel_info_str = executed_kernel_info_string(); 
-   //fprintf(statfout, "%s", kernel_info_str.c_str()); 
+    //std::string kernel_info_str = executed_kernel_info_string();
+    //fprintf(statfout, "%s", kernel_info_str.c_str()); 
 	
 	fprintf(outputfile, "gpu_ipc_1 = %12.4f\n", (float)gpu_sim_insn_1 / gpu_tot_sim_cycle_stream_1);
 	fprintf(outputfile, "gpu_ipc_2 = %12.4f\n", (float)gpu_sim_insn_2 / gpu_tot_sim_cycle_stream_2);
@@ -1164,11 +1204,29 @@ void gpgpu_sim::gpu_print_stat_file(FILE* outputfile)
    //clear_executed_kernel_info(); 
 }
 void gpgpu_sim::gpu_print_stat() 
-{  
-   FILE *statfout = stdout; 
+{
+    //sjq
+    std::ofstream out("queue_latency.txt");
+    if (!out.is_open())
+    {
+        abort();
+    }
+    out << total_enter_icnt_to_l2_times << " "
+        << total_enter_l2_to_icnt_times << " "
+        << total_enter_l2_to_dram_times << " "
+        << total_enter_dram_to_l2_times << " "
+        << total_enter_icnt_to_l2_cycles << " "
+        << total_enter_l2_to_icnt_cycles << " "
+        << total_enter_l2_to_dram_cycles << " "
+        << total_enter_dram_to_l2_cycles << " " << std::endl;
+    out.close();
+//sjq
 
-   std::string kernel_info_str = executed_kernel_info_string(); 
-   fprintf(statfout, "%s", kernel_info_str.c_str()); 
+
+    FILE *statfout = stdout;
+
+    std::string kernel_info_str = executed_kernel_info_string();
+    fprintf(statfout, "%s", kernel_info_str.c_str()); 
    
 	printf("gpu_ipc_1 = %12.4f\n", (float)gpu_sim_insn_1 / gpu_tot_sim_cycle_stream_1);
 	printf("gpu_ipc_2 = %12.4f\n", (float)gpu_sim_insn_2 / gpu_tot_sim_cycle_stream_2);
@@ -1465,8 +1523,27 @@ void gpgpu_sim::issue_block2core() //new
 
 unsigned long long g_single_step=0; // set this in gdb to single step the pipeline
 
+
+
 void gpgpu_sim::cycle()
 {
+    if(gpu_sim_cycle+gpu_tot_sim_cycle>=next_record_cycle){
+        next_record_cycle += 100000;
+        std::ofstream out("queue_latency.txt");
+        if (!out.is_open())
+        {
+            abort();
+        }
+        out << total_enter_icnt_to_l2_times << " "
+            << total_enter_l2_to_icnt_times << " "
+            << total_enter_l2_to_dram_times << " "
+            << total_enter_dram_to_l2_times << " "
+            << total_enter_icnt_to_l2_cycles << " "
+            << total_enter_l2_to_icnt_cycles << " "
+            << total_enter_l2_to_dram_cycles << " "
+            << total_enter_dram_to_l2_cycles << " " << std::endl;
+        out.close();
+    }
     if (m_memory_config->gpu_app == 1) { //new
         
 		
@@ -1491,8 +1568,13 @@ void gpgpu_sim::cycle()
             if (mf) {
                 unsigned response_size = mf->get_is_write()?mf->get_ctrl_size():mf->size();
                 if ( ::icnt_has_buffer( m_shader_config->mem2device(i), response_size ) ) {
-                    if (!mf->get_is_write()) 
-                       mf->set_return_timestamp(gpu_sim_cycle+gpu_tot_sim_cycle);
+                    if (!mf->get_is_write())//that must happen!!!
+                    {
+                        
+                        mf->set_return_timestamp(gpu_sim_cycle + gpu_tot_sim_cycle);
+                        //sjq
+                       
+                    }
                     mf->set_status(IN_ICNT_TO_SHADER,gpu_sim_cycle+gpu_tot_sim_cycle);
                     ::icnt_push( m_shader_config->mem2device(i), mf->get_tpc(), mf, response_size );
                     m_memory_sub_partition[i]->pop();
@@ -1531,7 +1613,9 @@ void gpgpu_sim::cycle()
           if ( m_memory_sub_partition[i]->full() ) {
              gpu_stall_dramfull++;
           } else {
+
               mem_fetch* mf = (mem_fetch*) icnt_pop( m_shader_config->mem2device(i) );
+              
               m_memory_sub_partition[i]->push( mf, gpu_sim_cycle + gpu_tot_sim_cycle );
           }
           m_memory_sub_partition[i]->cache_cycle(gpu_sim_cycle+gpu_tot_sim_cycle);

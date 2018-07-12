@@ -50,7 +50,14 @@ extern float periodic_miss_rate[4];
 extern int gpu_sms;
 extern int gpu_mode3;
 extern int gpu_sms_app1;
-
+extern unsigned long long total_enter_icnt_to_l2_times;
+extern unsigned long long total_enter_l2_to_icnt_times;
+extern unsigned long long total_enter_l2_to_dram_times;
+extern unsigned long long total_enter_dram_to_l2_times; 
+extern unsigned long long total_enter_icnt_to_l2_cycles;
+extern unsigned long long total_enter_l2_to_icnt_cycles;
+extern unsigned long long total_enter_l2_to_dram_cycles;
+extern unsigned long long total_enter_dram_to_l2_cycles;
 
 mem_fetch * partition_mf_allocator::alloc(new_addr_type addr, mem_access_type type, unsigned size, bool wr ) const 
 {
@@ -235,6 +242,11 @@ void memory_partition_unit::dram_cycle()
             if (!m_sub_partition[spid]->L2_dram_queue_empty() && can_issue_to_dram(spid)) {
                 mem_fetch *mf = m_sub_partition[spid]->L2_dram_queue_top();
                 m_sub_partition[spid]->L2_dram_queue_pop();
+                if(mf){
+                    mf->pop_from_l2ToDram_timestamp=gpu_sim_cycle+gpu_tot_sim_cycle;
+                    total_enter_l2_to_dram_cycles+=mf->get_l2ToDram_lat();
+                    total_enter_l2_to_dram_times++;
+                }
                 MEMPART_DPRINTF("Issue mem_fetch request %p from sub partition %d to dram\n", mf, spid); 
                 dram_delay_t d;
                 d.req = mf;
@@ -356,6 +368,8 @@ void memory_sub_partition::cache_cycle( unsigned cycle )
 				mf->set_reply();
 				mf->set_status(IN_PARTITION_L2_TO_ICNT_QUEUE,gpu_sim_cycle+gpu_tot_sim_cycle);
 				m_L2_icnt_queue->push(mf);
+                if(mf)
+                mf->enter_l2ToIcnt_timestamp=gpu_sim_cycle+gpu_tot_sim_cycle;
            }else{
 				m_request_tracker.erase(mf);
 				delete mf;
@@ -371,11 +385,25 @@ void memory_sub_partition::cache_cycle( unsigned cycle )
                 mf->set_status(IN_PARTITION_L2_FILL_QUEUE,gpu_sim_cycle+gpu_tot_sim_cycle);
                 m_L2cache->fill(mf,gpu_sim_cycle+gpu_tot_sim_cycle);
                 m_dram_L2_queue->pop();
+                if (mf)
+                {
+                    mf->pop_from_dramToL2_timestamp = gpu_sim_cycle + gpu_tot_sim_cycle;
+                    total_enter_dram_to_l2_times++;
+                    total_enter_dram_to_l2_cycles += mf->get_dramToL2_lat();
+                }
             }
         } else if ( !m_L2_icnt_queue->full() ) {
             mf->set_status(IN_PARTITION_L2_TO_ICNT_QUEUE,gpu_sim_cycle+gpu_tot_sim_cycle);
             m_L2_icnt_queue->push(mf);
+            if(mf)
+            mf->enter_l2ToIcnt_timestamp=gpu_sim_cycle+gpu_tot_sim_cycle;
             m_dram_L2_queue->pop();
+            if (mf)
+            {
+                mf->pop_from_dramToL2_timestamp = gpu_sim_cycle + gpu_tot_sim_cycle;
+                total_enter_dram_to_l2_times++;
+                total_enter_dram_to_l2_cycles += mf->get_dramToL2_lat();
+            }
         }
     }
 
@@ -435,16 +463,40 @@ void memory_sub_partition::cache_cycle( unsigned cycle )
                         } else {
                             mf->set_reply();
                             mf->set_status(IN_PARTITION_L2_TO_ICNT_QUEUE,gpu_sim_cycle+gpu_tot_sim_cycle);
+                            
                             m_L2_icnt_queue->push(mf);
+                            if(mf)
+                            mf->enter_l2ToIcnt_timestamp=gpu_sim_cycle+gpu_tot_sim_cycle;
                         }
                         m_icnt_L2_queue->pop();
-                    } else {
+                        if (mf)
+                        {
+                            mf->pop_from_icntToL2_timestamp = gpu_sim_cycle + gpu_tot_sim_cycle;
+                            total_enter_icnt_to_l2_times++;
+                            total_enter_icnt_to_l2_cycles += mf->get_icntToL2_lat();
+                        }
+                    }
+                    else
+                    {
                         assert(write_sent);
                         m_icnt_L2_queue->pop();
+                        if (mf)
+                        {
+                            mf->pop_from_icntToL2_timestamp = gpu_sim_cycle + gpu_tot_sim_cycle;
+                            total_enter_icnt_to_l2_times++;
+                            total_enter_icnt_to_l2_cycles += mf->get_icntToL2_lat();
+                        }
                     }
                 } else if ( status != RESERVATION_FAIL ) {
                     // L2 cache accepted request
                     m_icnt_L2_queue->pop();
+                    //dbg
+                    
+                    if(mf){
+                        mf->pop_from_icntToL2_timestamp=gpu_sim_cycle+gpu_tot_sim_cycle;
+                        total_enter_icnt_to_l2_times++;
+                        total_enter_icnt_to_l2_cycles+=mf->get_icntToL2_lat();
+                    }
                 } else {
                     assert(!write_sent);
                     assert(!read_sent);
@@ -455,7 +507,16 @@ void memory_sub_partition::cache_cycle( unsigned cycle )
             // L2 is disabled or non-texture access to texture-only L2
             mf->set_status(IN_PARTITION_L2_TO_DRAM_QUEUE,gpu_sim_cycle+gpu_tot_sim_cycle);
             m_L2_dram_queue->push(mf);
+            if(mf){
+                mf->enter_l2ToDram_timestamp=gpu_sim_cycle+gpu_tot_sim_cycle;
+            }
             m_icnt_L2_queue->pop();
+            if (mf)
+            {
+                mf->pop_from_icntToL2_timestamp = gpu_sim_cycle + gpu_tot_sim_cycle;
+                total_enter_icnt_to_l2_times++;
+                total_enter_icnt_to_l2_cycles += mf->get_icntToL2_lat();
+            }
         }
     }
 
@@ -464,6 +525,9 @@ void memory_sub_partition::cache_cycle( unsigned cycle )
         mem_fetch* mf = m_rop.front().req;
         m_rop.pop();
         m_icnt_L2_queue->push(mf);
+        if(mf){
+            mf->enter_icntToL2_timestamp=gpu_sim_cycle+gpu_tot_sim_cycle;
+        }
         mf->set_status(IN_PARTITION_ICNT_TO_L2_QUEUE,gpu_sim_cycle+gpu_tot_sim_cycle);
     }
 }
@@ -496,6 +560,9 @@ bool memory_sub_partition::dram_L2_queue_full() const
 void memory_sub_partition::dram_L2_queue_push( class mem_fetch* mf )
 {
    m_dram_L2_queue->push(mf); 
+   if(mf){
+       mf->enter_dramToL2_timestamp=gpu_sim_cycle+gpu_tot_sim_cycle;
+   }
 }
 
 /*void memory_sub_partition::print_cache_stat(unsigned &accesses, unsigned &misses) const
@@ -876,6 +943,9 @@ void memory_sub_partition::push( mem_fetch* req, unsigned long long cycle )
         m_stats->memlatstat_icnt2mem_pop(req);
         if( req->istexture() ) {
             m_icnt_L2_queue->push(req);
+            if(req){
+            req->enter_icntToL2_timestamp=gpu_sim_cycle+gpu_tot_sim_cycle;
+            }
             req->set_status(IN_PARTITION_ICNT_TO_L2_QUEUE,gpu_sim_cycle+gpu_tot_sim_cycle);
         } else {
             rop_delay_t r;
@@ -890,6 +960,11 @@ void memory_sub_partition::push( mem_fetch* req, unsigned long long cycle )
 mem_fetch* memory_sub_partition::pop() 
 {
     mem_fetch* mf = m_L2_icnt_queue->pop();
+    if(mf){
+        mf->pop_from_l2ToIcnt_timestamp = gpu_sim_cycle + gpu_tot_sim_cycle;
+        total_enter_l2_to_icnt_cycles += mf->get_l2ToIcnt_lat();
+        total_enter_l2_to_icnt_times++;
+    }
     m_request_tracker.erase(mf);
     if ( mf && mf->isatomic() )
         mf->do_atomic();
@@ -905,6 +980,14 @@ mem_fetch* memory_sub_partition::top()
     mem_fetch *mf = m_L2_icnt_queue->top();
     if( mf && (mf->get_access_type() == L2_WRBK_ACC || mf->get_access_type() == L1_WRBK_ACC) ) {
         m_L2_icnt_queue->pop();
+        //sjq
+        if (mf)
+        {
+            mf->pop_from_l2ToIcnt_timestamp = gpu_sim_cycle + gpu_tot_sim_cycle;
+            total_enter_l2_to_icnt_cycles += mf->get_l2ToIcnt_lat();
+            total_enter_l2_to_icnt_times++;
+        }
+
         m_request_tracker.erase(mf);
         delete mf;
         mf = NULL;

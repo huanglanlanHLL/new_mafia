@@ -903,7 +903,8 @@ bool baseline_cache::bandwidth_management::fill_port_free() const
 {
     return (m_fill_port_occupied_cycles == 0); 
 }
-
+extern unsigned long long gpu_sim_cycle;
+extern unsigned long long gpu_tot_sim_cycle;
 /// Sends next request to lower level of memory
 void baseline_cache::cycle(){
     if ( !m_miss_queue.empty() ) {

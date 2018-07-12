@@ -241,6 +241,8 @@ private:
    friend class L2interface;
 };
 
+extern unsigned long long gpu_sim_cycle;
+extern unsigned long long gpu_tot_sim_cycle;
 class L2interface : public mem_fetch_interface {
 public:
     L2interface( memory_sub_partition *unit ) { m_unit=unit; }
@@ -254,6 +256,10 @@ public:
     {
         mf->set_status(IN_PARTITION_L2_TO_DRAM_QUEUE,0/*FIXME*/);
         m_unit->m_L2_dram_queue->push(mf);
+        if (mf)
+        {
+            mf->enter_l2ToDram_timestamp = gpu_sim_cycle + gpu_tot_sim_cycle;
+        }
     }
 private:
     memory_sub_partition *m_unit;

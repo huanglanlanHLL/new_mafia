@@ -111,7 +111,47 @@ public:
    const memory_config *get_mem_config(){return m_mem_config;}
 
    unsigned get_num_flits(bool simt_to_mem);
-private:
+   unsigned long long get_icntToL2_lat() const
+   {
+       unsigned long long lat=pop_from_icntToL2_timestamp - enter_icntToL2_timestamp;
+       assert(lat>=0&&lat<10000);
+       return lat;
+   }
+   unsigned long long get_l2ToIcnt_lat() const
+   {
+
+       unsigned long long lat=pop_from_l2ToIcnt_timestamp - enter_l2ToIcnt_timestamp;
+       assert(lat>=0&&lat<10000);
+       return lat;
+   }
+   unsigned long long get_l2ToDram_lat() const
+   {
+       unsigned long long lat=pop_from_l2ToDram_timestamp - enter_l2ToDram_timestamp;
+       assert(lat>=0&&lat<10000);
+       return lat;
+   }
+   unsigned long long get_dramToL2_lat() const
+   {
+       unsigned long long lat=pop_from_dramToL2_timestamp - enter_dramToL2_timestamp;
+       assert(lat>=0&&lat<10000);
+       return lat;
+   }
+   unsigned long long enter_icntToL2_timestamp ;
+   unsigned long long pop_from_icntToL2_timestamp ;
+
+   unsigned long long enter_l2ToIcnt_timestamp ;
+   unsigned long long pop_from_l2ToIcnt_timestamp ;
+
+   unsigned long long enter_l2ToDram_timestamp;
+   unsigned long long pop_from_l2ToDram_timestamp;
+
+   unsigned long long enter_dramToL2_timestamp;
+   unsigned long long pop_from_dramToL2_timestamp;
+
+ private:
+   //sjq
+   //unsigned long long access_icntToL2_times;
+   
    // request source information
    unsigned m_request_uid;
    unsigned m_sid;
