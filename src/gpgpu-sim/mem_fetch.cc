@@ -33,13 +33,16 @@
 
 unsigned mem_fetch::sm_next_mf_request_uid=1;
 
-mem_fetch::mem_fetch( const mem_access_t &access, 
-                      const warp_inst_t *inst,
-                      unsigned ctrl_size, 
-                      unsigned wid,
-                      unsigned sid, 
-                      unsigned tpc, 
-                      const class memory_config *config )
+mem_fetch::mem_fetch(const mem_access_t &access,
+                     const warp_inst_t *inst,
+                     unsigned ctrl_size,
+                     unsigned wid,
+                     unsigned sid,
+                     unsigned tpc,
+                     const class memory_config *config) : enterL2(-1),
+                                                          enterDram(-1),
+                                                          leaveL2(-1),
+                                                          leaveDram(-1)
 {
    m_request_uid = sm_next_mf_request_uid++;
    m_access = access;

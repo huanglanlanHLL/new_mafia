@@ -388,6 +388,7 @@ void memory_sub_partition::cache_cycle( unsigned cycle )
                 if (mf)
                 {
                     mf->pop_from_dramToL2_timestamp = gpu_sim_cycle + gpu_tot_sim_cycle;
+                    mf->leaveDram=gpu_sim_cycle + gpu_tot_sim_cycle;
                     total_enter_dram_to_l2_times++;
                     total_enter_dram_to_l2_cycles += mf->get_dramToL2_lat();
                 }
@@ -401,6 +402,7 @@ void memory_sub_partition::cache_cycle( unsigned cycle )
             if (mf)
             {
                 mf->pop_from_dramToL2_timestamp = gpu_sim_cycle + gpu_tot_sim_cycle;
+                mf->leaveDram=gpu_sim_cycle + gpu_tot_sim_cycle;
                 total_enter_dram_to_l2_times++;
                 total_enter_dram_to_l2_cycles += mf->get_dramToL2_lat();
             }
@@ -509,6 +511,7 @@ void memory_sub_partition::cache_cycle( unsigned cycle )
             m_L2_dram_queue->push(mf);
             if(mf){
                 mf->enter_l2ToDram_timestamp=gpu_sim_cycle+gpu_tot_sim_cycle;
+                mf->enterDram=gpu_sim_cycle+gpu_tot_sim_cycle;
             }
             m_icnt_L2_queue->pop();
             if (mf)

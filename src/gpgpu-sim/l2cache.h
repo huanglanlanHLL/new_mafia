@@ -259,6 +259,7 @@ public:
         if (mf)
         {
             mf->enter_l2ToDram_timestamp = gpu_sim_cycle + gpu_tot_sim_cycle;
+            mf->enterDram=gpu_sim_cycle+gpu_tot_sim_cycle;
         }
     }
 private:

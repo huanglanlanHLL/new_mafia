@@ -83,15 +83,22 @@ extern FILE *file2;
 extern FILE *file3;
 bool g_interactive_debugger_enabled=false;
 //sjq
-unsigned long long total_enter_icnt_to_l2_times=0;
-unsigned long long total_enter_l2_to_icnt_times=0;
-unsigned long long total_enter_l2_to_dram_times=0;
-unsigned long long total_enter_dram_to_l2_times=0; 
-unsigned long long total_enter_icnt_to_l2_cycles=0;
-unsigned long long total_enter_l2_to_icnt_cycles=0;
-unsigned long long total_enter_l2_to_dram_cycles=0;
-unsigned long long total_enter_dram_to_l2_cycles=0;
-unsigned long long next_record_cycle=0;
+unsigned long long total_enter_icnt_to_l2_times = 0;
+unsigned long long total_enter_l2_to_icnt_times = 0;
+unsigned long long total_enter_l2_to_dram_times = 0;
+unsigned long long total_enter_dram_to_l2_times = 0;
+unsigned long long total_enter_icnt_to_l2_cycles = 0;
+unsigned long long total_enter_l2_to_icnt_cycles = 0;
+unsigned long long total_enter_l2_to_dram_cycles = 0;
+unsigned long long total_enter_dram_to_l2_cycles = 0;
+
+unsigned long long hit_total_L2_time = 0;
+unsigned long long miss_total_L2_time = 0;
+unsigned long long miss_total_dram_time = 0;
+unsigned long long hit_times = 0;
+unsigned long long miss_times = 0;
+
+unsigned long long next_record_cycle = 0;
 //sjq
 unsigned long long  gpu_sim_cycle = 0;
 int count_tlp =0;
@@ -1541,7 +1548,13 @@ void gpgpu_sim::cycle()
             << total_enter_icnt_to_l2_cycles << " "
             << total_enter_l2_to_icnt_cycles << " "
             << total_enter_l2_to_dram_cycles << " "
-            << total_enter_dram_to_l2_cycles << " " << std::endl;
+            << total_enter_dram_to_l2_cycles << " "
+            << hit_times << " "
+            << hit_total_L2_time << " "
+            << miss_times << " "
+            << miss_total_L2_time << " "
+            << miss_total_dram_time << " "
+            << std::endl;
         out.close();
     }
     if (m_memory_config->gpu_app == 1) { //new
@@ -1577,6 +1590,20 @@ void gpgpu_sim::cycle()
                     }
                     mf->set_status(IN_ICNT_TO_SHADER,gpu_sim_cycle+gpu_tot_sim_cycle);
                     ::icnt_push( m_shader_config->mem2device(i), mf->get_tpc(), mf, response_size );
+                    if(mf){
+                        mf->leaveL2=gpu_sim_cycle + gpu_tot_sim_cycle;
+                        if (mf->enterDram == -1)
+                        {
+                            hit_times++;
+                            hit_total_L2_time += mf->leaveL2 - mf->enterL2;
+                        }
+                        else
+                        {
+                            miss_times++;
+                            miss_total_L2_time += mf->enterDram - mf->enterL2 + mf->leaveL2 - mf->leaveDram;
+                            miss_total_dram_time += mf->leaveDram - mf->enterDram;
+                        }
+                    }
                     m_memory_sub_partition[i]->pop();
                 } else {
                     gpu_stall_icnt2sh++;
@@ -1617,6 +1644,9 @@ void gpgpu_sim::cycle()
               mem_fetch* mf = (mem_fetch*) icnt_pop( m_shader_config->mem2device(i) );
               
               m_memory_sub_partition[i]->push( mf, gpu_sim_cycle + gpu_tot_sim_cycle );
+              if(mf){
+                  mf->enterL2=gpu_sim_cycle + gpu_tot_sim_cycle ;
+              }
           }
           m_memory_sub_partition[i]->cache_cycle(gpu_sim_cycle+gpu_tot_sim_cycle);
           m_memory_sub_partition[i]->accumulate_L2cache_stats(m_power_stats->pwr_mem_stat->l2_cache_stats[CURRENT_STAT_IDX]);

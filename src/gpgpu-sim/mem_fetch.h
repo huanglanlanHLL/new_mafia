@@ -136,6 +136,11 @@ public:
        assert(lat>=0&&lat<10000);
        return lat;
    }
+   unsigned long long enterL2;
+   unsigned long long enterDram;
+   unsigned long long leaveL2;
+   unsigned long long leaveDram;
+
    unsigned long long enter_icntToL2_timestamp ;
    unsigned long long pop_from_icntToL2_timestamp ;
 
