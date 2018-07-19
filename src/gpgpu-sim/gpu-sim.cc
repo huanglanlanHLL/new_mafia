@@ -835,13 +835,19 @@ void gpgpu_sim::print_stats()
         abort();
     }
     out << total_enter_icnt_to_l2_times << " "
-        << total_enter_l2_to_icnt_times << " "
-        << total_enter_l2_to_dram_times << " "
-        << total_enter_dram_to_l2_times << " "
-        << total_enter_icnt_to_l2_cycles << " "
-        << total_enter_l2_to_icnt_cycles << " "
-        << total_enter_l2_to_dram_cycles << " "
-        << total_enter_dram_to_l2_cycles << " " << std::endl;
+            << total_enter_l2_to_icnt_times << " "
+            << total_enter_l2_to_dram_times << " "
+            << total_enter_dram_to_l2_times << " "
+            << total_enter_icnt_to_l2_cycles << " "
+            << total_enter_l2_to_icnt_cycles << " "
+            << total_enter_l2_to_dram_cycles << " "
+            << total_enter_dram_to_l2_cycles << " "
+            << hit_times << " "
+            << hit_total_L2_time << " "
+            << miss_times << " "
+            << miss_total_L2_time << " "
+            << miss_total_dram_time << " "
+            << std::endl;
     out.close();
 
     //sjq
@@ -1073,13 +1079,19 @@ void gpgpu_sim::gpu_print_stat_file(FILE* outputfile)
         abort();
     }
     out << total_enter_icnt_to_l2_times << " "
-        << total_enter_l2_to_icnt_times << " "
-        << total_enter_l2_to_dram_times << " "
-        << total_enter_dram_to_l2_times << " "
-        << total_enter_icnt_to_l2_cycles << " "
-        << total_enter_l2_to_icnt_cycles << " "
-        << total_enter_l2_to_dram_cycles << " "
-        << total_enter_dram_to_l2_cycles << " " << std::endl;
+            << total_enter_l2_to_icnt_times << " "
+            << total_enter_l2_to_dram_times << " "
+            << total_enter_dram_to_l2_times << " "
+            << total_enter_icnt_to_l2_cycles << " "
+            << total_enter_l2_to_icnt_cycles << " "
+            << total_enter_l2_to_dram_cycles << " "
+            << total_enter_dram_to_l2_cycles << " "
+            << hit_times << " "
+            << hit_total_L2_time << " "
+            << miss_times << " "
+            << miss_total_L2_time << " "
+            << miss_total_dram_time << " "
+            << std::endl;
     out.close();
     //FILE *statfout = stdout;
 
@@ -1219,13 +1231,19 @@ void gpgpu_sim::gpu_print_stat()
         abort();
     }
     out << total_enter_icnt_to_l2_times << " "
-        << total_enter_l2_to_icnt_times << " "
-        << total_enter_l2_to_dram_times << " "
-        << total_enter_dram_to_l2_times << " "
-        << total_enter_icnt_to_l2_cycles << " "
-        << total_enter_l2_to_icnt_cycles << " "
-        << total_enter_l2_to_dram_cycles << " "
-        << total_enter_dram_to_l2_cycles << " " << std::endl;
+            << total_enter_l2_to_icnt_times << " "
+            << total_enter_l2_to_dram_times << " "
+            << total_enter_dram_to_l2_times << " "
+            << total_enter_icnt_to_l2_cycles << " "
+            << total_enter_l2_to_icnt_cycles << " "
+            << total_enter_l2_to_dram_cycles << " "
+            << total_enter_dram_to_l2_cycles << " "
+            << hit_times << " "
+            << hit_total_L2_time << " "
+            << miss_times << " "
+            << miss_total_L2_time << " "
+            << miss_total_dram_time << " "
+            << std::endl;
     out.close();
 //sjq
 
